@@ -2,44 +2,17 @@
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
-
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
-
-My version is a simple content-based music recommender. It compares each song's
-genre, mood, and audio features with a user's taste profile, gives each song a
-match score, and recommends the highest-scoring songs. This makes the results
-easy to calculate and explain.
+I built a simple content-based music recommender for a catalog of 17 songs. It
+compares each song with a user's preferred genre, mood, and audio features. It
+then scores every song, ranks the scores, and returns the top five with reasons
+for each score.
 
 ---
 
 ## How The System Works
 
-Explain your design in plain language.
-
-Some prompts to answer:
-
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
-
-You can include a simple diagram or bullet list if helpful.
-
 Each `Song` uses genre, mood, energy, valence, danceability, acousticness, and
-`tempo_bpm`. The `UserProfile` stores preferred values for those same features.
-
-### User Profile
-
-This realistic example represents someone who prefers relaxed lofi music:
+`tempo_bpm`. The user profile stores target values for the same features:
 
 ```python
 user_profile = {
@@ -53,46 +26,41 @@ user_profile = {
 }
 ```
 
-This profile is moderately narrow because it asks for one exact genre and mood,
-but the five numerical targets add enough detail to distinguish between quiet,
-acoustic lofi and more upbeat lofi songs. It is not flexible enough for a user
-with several favorite styles. A future version could accept multiple genres and
-moods, preference ranges, or listening history. It could also let users skip
-unknown preferences instead of forcing new users to choose every value.
+This profile is fairly specific because it asks for one genre and one mood.
+The numerical targets help separate songs within that style, but the profile
+does not handle someone who likes several genres at once. A future version
+could accept multiple genres, ranges, or unknown preferences.
 
 ### Algorithm Recipe
 
-The planned weights total 100%:
-
-| Feature | Weight | How it is compared |
+| Feature | Weight | Comparison |
 | --- | ---: | --- |
-| Genre | 30% | 1 for an exact match, otherwise 0 |
-| Mood | 25% | 1 for an exact match, otherwise 0 |
-| Energy | 12% | Closeness to the target value |
-| Valence | 10% | Closeness to the target value |
-| Danceability | 10% | Closeness to the target value |
-| Acousticness | 8% | Closeness to the target value |
+| Genre | 30% | Exact match |
+| Mood | 25% | Exact match |
+| Energy | 12% | Closeness to the target |
+| Valence | 10% | Closeness to the target |
+| Danceability | 10% | Closeness to the target |
+| Acousticness | 8% | Closeness to the target |
 | Tempo | 5% | Closeness to the target BPM |
 
-Genre has the highest weight because it is the strongest broad signal of musical
-style. Mood is second because it captures the vibe the user wants. The numerical
-features refine the match without overpowering style. Tempo has the lowest
-weight because it overlaps with energy and should mainly break close ties.
+Genre has the highest weight because it is the broadest signal of style. Mood
+is second because it captures the vibe the user asked for. The numerical
+features fine-tune the result without taking over the whole score.
 
-For energy, valence, danceability, and acousticness, which range from 0 to 1:
+For energy, valence, danceability, and acousticness, I use:
 
 ```text
 similarity = 1 - abs(user_target - song_value)
 ```
 
-Tempo uses the same idea but divides the difference by the catalog's 92 BPM
-range (152 minus 60):
+Tempo uses the same idea, but the difference is divided by the 92 BPM range in
+the catalog:
 
 ```text
 tempo_similarity = max(0, 1 - abs(target_tempo - song_tempo) / 92)
 ```
 
-The planned score for each song is:
+The final score is:
 
 ```text
 score = 0.30 * genre_match
@@ -104,10 +72,10 @@ score = 0.30 * genre_match
       + 0.05 * tempo_similarity
 ```
 
-This closeness rule rewards a song for being near the user's target, not for
-simply having a larger feature value. The recommender will score every song,
-sort scores from highest to lowest, and return the top five. Equal scores will
-be ordered alphabetically by title so the ranking is predictable.
+This rewards songs for being close to the user's targets, not for simply
+having larger values. `score_song()` returns the score and a list of reasons.
+`recommend_songs()` scores every song, sorts from highest to lowest, and returns
+the top five. If two scores are equal, the song title breaks the tie.
 
 ### Data Flow
 
@@ -137,18 +105,19 @@ Return Top Recommendations
    python -m venv .venv
    source .venv/bin/activate      # Mac or Linux
    .venv\Scripts\activate         # Windows
+   ```
 
 2. Install dependencies
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 3. Run the app:
 
-```bash
-python -m src.main
-```
+   ```bash
+   python -m src.main
+   ```
 
 ### Running Tests
 
@@ -164,118 +133,104 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Sample Recommendation Output
 
-Paste a sample of your recommender's output here as a text block so a reader can see what it produces:
+This is the first profile from `python -m src.main`:
 
-```
+```text
 Loaded songs: 17
 
+Profile: High-Energy Pop
 Top Recommendations
 
-1. Midnight Coding by LoRoom
-   Score: 0.9833
+1. Sunrise City by Neon Echo
+   Score: 0.9730
    Reasons:
    - Genre match (+0.3000)
    - Mood match (+0.2500)
-   - Energy similarity 0.9800 (+0.1176)
-   - Valence similarity 0.9600 (+0.0960)
-   - Danceability similarity 0.9800 (+0.0980)
-   - Acousticness similarity 0.9100 (+0.0728)
-   - Tempo similarity 0.9783 (+0.0489)
+   - Energy similarity 0.9400 (+0.1128)
+   - Valence similarity 0.9900 (+0.0990)
+   - Danceability similarity 0.9300 (+0.0930)
+   - Acousticness similarity 0.9200 (+0.0736)
+   - Tempo similarity 0.8913 (+0.0446)
 
-2. Library Rain by Paper Lanterns
-   Score: 0.9829
-   Reasons:
-   - Genre match (+0.3000)
-   - Mood match (+0.2500)
-   - Energy similarity 0.9500 (+0.1140)
-   - Valence similarity 1.0000 (+0.1000)
-   - Danceability similarity 0.9800 (+0.0980)
-   - Acousticness similarity 0.9400 (+0.0752)
-   - Tempo similarity 0.9130 (+0.0457)
-
-3. Focus Flow by LoRoom
-   Score: 0.7474
+2. Gym Hero by Max Pulse
+   Score: 0.7278
    Reasons:
    - Genre match (+0.3000)
    - Mood no match (+0.0000)
-   - Energy similarity 1.0000 (+0.1200)
-   - Valence similarity 0.9900 (+0.0990)
-   - Danceability similarity 1.0000 (+0.1000)
-   - Acousticness similarity 0.9800 (+0.0784)
-   - Tempo similarity 1.0000 (+0.0500)
+   - Energy similarity 0.9500 (+0.1140)
+   - Valence similarity 0.9200 (+0.0920)
+   - Danceability similarity 0.9800 (+0.0980)
+   - Acousticness similarity 0.9500 (+0.0760)
+   - Tempo similarity 0.9565 (+0.0478)
 
-4. Spacewalk Thoughts by Orbit Bloom
-   Score: 0.6411
+3. Rooftop Lights by Indigo Parade
+   Score: 0.6554
    Reasons:
    - Genre no match (+0.0000)
    - Mood match (+0.2500)
    - Energy similarity 0.8800 (+0.1056)
-   - Valence similarity 0.9500 (+0.0950)
-   - Danceability similarity 0.8100 (+0.0810)
-   - Acousticness similarity 0.8800 (+0.0704)
-   - Tempo similarity 0.7826 (+0.0391)
+   - Valence similarity 0.9600 (+0.0960)
+   - Danceability similarity 0.9600 (+0.0960)
+   - Acousticness similarity 0.7500 (+0.0600)
+   - Tempo similarity 0.9565 (+0.0478)
 
-5. Old River Road by Juniper Miles
-   Score: 0.4287
+4. Electric Horizon by Nova Circuit
+   Score: 0.4394
    Reasons:
    - Genre no match (+0.0000)
    - Mood no match (+0.0000)
-   - Energy similarity 0.9700 (+0.1164)
-   - Valence similarity 0.9800 (+0.0980)
-   - Danceability similarity 0.9100 (+0.0910)
+   - Energy similarity 0.9900 (+0.1188)
+   - Valence similarity 0.9700 (+0.0970)
+   - Danceability similarity 0.9600 (+0.0960)
    - Acousticness similarity 0.9700 (+0.0776)
-   - Tempo similarity 0.9130 (+0.0457)
+   - Tempo similarity 1.0000 (+0.0500)
+
+5. City Crown by Rhyme District
+   Score: 0.4112
+   Reasons:
+   - Genre no match (+0.0000)
+   - Mood no match (+0.0000)
+   - Energy similarity 0.9600 (+0.1152)
+   - Valence similarity 0.8500 (+0.0850)
+   - Danceability similarity 1.0000 (+0.1000)
+   - Acousticness similarity 0.9800 (+0.0784)
+   - Tempo similarity 0.6522 (+0.0326)
 ```
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
+**Screenshot or video** *(optional)*: Not included.
 
 ---
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+I tested High-Energy Pop, Chill Lofi, Deep Rock, and one conflicting
+High-Energy Classical profile. The first three had clear top matches. The edge
+case was useful because the only classical song ranked third; its genre matched,
+but its calm audio features were far from the high-energy targets.
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
-
-I tried lowering the genre weight and noticed that songs from unrelated genres
-could rank highly just because their numerical features were close. Raising the
-genre and mood weights produced recommendations that felt more consistent with
-the user's requested style.
-
-I also tried scoring numerical features by their raw values. That incorrectly
-favored high-energy, high-danceability songs even when the user preferred lower
-values. Using distance from the user's preference fixed this behavior. Adding
-tempo helped separate otherwise similar songs, but I kept its weight low because
-tempo overlaps with energy in this small dataset.
+For one controlled experiment, I lowered genre from 0.30 to 0.15 and raised
+energy from 0.12 to 0.27. Energy-close songs moved up: Rooftop Lights passed Gym
+Hero for High-Energy Pop, Spacewalk Thoughts passed Focus Flow for Chill Lofi,
+and Electric Horizon passed Night Drive Loop for Deep Rock. Golden Strings also
+dropped out of the edge-case top five. The results were different, but I did not
+think they were clearly better because the requested genre mattered less. I
+restored the original weights after the experiment.
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
-
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
-
-- The catalog is very small, so the recommendations have limited variety.
+- The catalog has only 17 songs, so the recommendations have limited variety.
 - The system only understands the provided labels and audio measurements; it
   does not understand lyrics, language, instruments, or listening context.
 - Exact genre and mood matches may oversimplify songs that fit several styles.
 - Hand-selected weights reflect my assumptions and may not match every user's
   idea of similarity.
-- Giving genre 30% of the score may favor exact genre matches too heavily and
-  hide good songs from related genres.
+- Giving genre 30% of the score may hide good songs from related genres.
 - The recommender does not learn from listening history, skips, ratings, or
   changing preferences.
-- New users may not know their exact preferences, so their first profile and
-  recommendations may be inaccurate.
+- New users may not know their exact preferences, which creates a cold-start
+  problem.
 - Repeatedly favoring the same genres and moods could create a filter bubble and
   make less common music harder to discover.
 
@@ -283,11 +238,12 @@ You will go deeper on this in your model card.
 
 ## Reflection
 
-Read and complete `model_card.md`:
+I learned how song data and user preferences can be turned into scores and then
+into a ranked list. I was surprised that a small weighted formula could still
+produce recommendations that felt personal when several features lined up.
 
-[**Model Card**](model_card.md)
-
-Write 1 to 2 paragraphs here about what you learned:
-
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
+I used Codex heavily because I was short on time, but I still had to check the
+work. I ran the program, read the recommendation reasons, reviewed the file
+changes, confirmed the original weights were restored, and ran the tests. That
+made it clear that AI can help me move faster, but I should not treat its output
+as automatically correct. More detail is in the [Model Card](model_card.md).

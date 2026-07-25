@@ -2,96 +2,84 @@
 
 ## 1. Model Name  
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
+**VibeFinder 1.0**
 
 ---
 
 ## 2. Intended Use  
 
-Describe what your recommender is designed to do and who it is for. 
+VibeFinder recommends songs from a small catalog by comparing song features
+with a user preference profile. It scores every song, ranks the strongest
+matches, and returns the top five. It assumes the user can describe one favorite
+genre and mood along with target values for five numerical features.
 
-Prompts:  
+This project is intended for learning how recommendation systems score and rank
+items, experimenting with profiles and feature weights, and demonstrating a
+small content-based recommender in a classroom.
 
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+It is not intended for real commercial music recommendations or for judging a
+person's personality or preferences. It should not be used for medical,
+financial, hiring, legal, or safety-critical decisions. Its results should not
+be presented as accurate predictions beyond this 17-song dataset.
 
 ---
 
 ## 3. How the Model Works  
 
-Explain your scoring approach in simple language.  
+The system compares genre, mood, energy, valence, danceability, acousticness,
+and tempo. An exact genre match earns 30% of the score, and an exact mood match
+earns 25%. The numerical features earn points based on how close each song is
+to the user's target, rather than rewarding values just for being higher.
 
-Prompts:  
-
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
-
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+Every song receives one combined score. The songs are sorted from highest to
+lowest, and the top five are returned with simple explanations showing where
+their points came from. The starter code did not calculate real rankings, so I
+added the scoring, sorting, and explanations.
 
 ---
 
 ## 4. Data  
 
-Describe the dataset the model uses.  
+The catalog contains 17 songs: 10 starter songs and 7 generated sample songs.
+Each row includes a title, artist, genre, mood, energy, valence, danceability,
+acousticness, and `tempo_bpm`. The catalog covers several styles, including
+pop, lofi, rock, ambient, jazz, classical, hip hop, folk, electronic, Latin,
+R&B, and country.
 
-Prompts:  
-
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+The data is small and partly synthetic, so it cannot represent the full range
+of real music or listeners. It does not include lyrics, real Spotify data,
+listening history, skips, likes, ratings, or other user behavior.
 
 ---
 
 ## 5. Strengths  
 
-Where does your system seem to work well  
+In my tests, the best results came when the catalog had a song that matched both
+the requested style and numerical targets. Sunrise City ranked first for
+High-Energy Pop, Midnight Coding ranked first for Chill Lofi, and Storm Runner
+ranked first for Deep Rock. Comparing several features also lets the system rank
+close alternatives instead of relying on genre alone.
 
-Prompts:  
-
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+The score explanations are another strength because they make each ranking easy
+to inspect. They show when a result is driven by genre, mood, numerical
+similarity, or a combination of those features.
 
 ---
 
 ## 6. Limitations and Bias 
 
-Where the system struggles or behaves unfairly. 
-
-Prompts:  
-
-- Features it does not consider  
-- Genres or moods that are underrepresented  
-- Cases where the system overfits to one preference  
-- Ways the scoring might unintentionally favor some users  
-
 The catalog has only 17 songs, so one song can represent an entire genre or
-mood and limit the variety of the results. The handcrafted weights and exact
-genre and mood matches may over-prioritize familiar categories, reinforcing a
-filter bubble. The system has no collaborative filtering and does not learn
-from listening history, skips, or ratings. It also cannot understand lyrics,
-language, context, or a new user's preferences, which creates cold-start and
-relevance problems.
+mood and limit the variety of the results. I chose the weights by hand, and the
+exact genre and mood checks can keep similar songs out or repeat the same types
+of music. The system has no collaborative filtering and does not learn from
+listening history, skips, or ratings. It also cannot understand lyrics,
+language, context, or what a new user actually likes. Because seven songs are
+generated samples, the catalog may not represent real music or different
+listeners fairly.
 
 ---
 
 ## 7. Evaluation  
-
-How you checked whether the recommender behaved as expected. 
-
-Prompts:  
-
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
-
-No need for numeric metrics unless you created some.
 
 I tested four profiles with different styles and numerical targets. Each block
 shows the real top-five output from the final scoring logic.
@@ -155,12 +143,12 @@ while the remaining songs rely only on numerical similarity. Storm Runner earns
 5. Electric Horizon by Nova Circuit — 0.3635
 ```
 
-This deliberately conflicting profile produces the most surprising ranking:
-the only classical song is third because its calm audio is far from the
-high-energy targets. Storm Runner instead receives 0.25 for its intense mood
-and 0.4126 from close numerical features; it gets no genre points, for a total
-of 0.6626. This is mathematically consistent, but it shows that one exact genre
-label cannot fully represent a conflicted preference.
+This conflicting profile produces the most surprising ranking: the only
+classical song is third because its calm audio is far from the high-energy
+targets. Storm Runner instead receives 0.25 for its intense mood and 0.4126
+from close numerical features; it gets no genre points, for a total of 0.6626.
+The score follows my rule, but it also shows that one exact genre label cannot
+fully represent conflicting preferences.
 
 The profiles differ because genre contributes 0.30, mood contributes 0.25, and
 the numerical weights refine the order: energy 0.12, valence 0.10,
@@ -181,32 +169,46 @@ energy closeness more than genre.
 
 The experimental results were more energy-focused but not clearly better. They
 reduced style relevance, especially for the classical request, so I restored
-the intended genre 0.30 and energy 0.12 weights. The experiment reinforces the
-limitations above: handcrafted weights can strongly shape exposure, the tiny
-catalog offers few alternatives, and the system cannot learn whether a user
-actually prefers the changed rankings.
+the intended genre 0.30 and energy 0.12 weights. This showed me how much my
+chosen weights control what gets recommended. The tiny catalog also gives the
+system few alternatives, and it cannot learn whether a user actually prefers
+the changed rankings.
+
+After restoring the original weights, I ran the CLI successfully for all four
+profiles. I also ran `pytest`, and both tests passed.
 
 ---
 
 ## 8. Future Work  
 
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+- Use a much larger dataset made from real music.
+- Include listening history, likes, skips, ratings, and other feedback.
+- Add collaborative filtering to learn from similar listeners.
+- Learn feature weights from feedback instead of choosing them manually.
+- Support partial genre and mood similarity instead of exact matches only.
+- Add more tests and evaluation metrics for relevance and recommendation
+  diversity.
 
 ---
 
 ## 9. Personal Reflection  
 
-A few sentences about your experience.  
+My biggest learning moment was seeing how a recommender turns song data and user
+preferences into scores, rankings, and explanations. I was surprised that even
+a small weighted scoring system could feel personalized when it compared
+several features and ranked songs consistently.
 
-Prompts:  
+Codex helped me move faster with implementation, documentation, testing, and
+debugging during a stressful time constraint. I still needed to run the
+program, inspect the real output, review file changes, confirm the original
+weights were restored after the experiment, and verify that `pytest` passed.
+Codex saved time, but its output was not proof that the project worked.
 
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+I also learned why AI work needs guardrails and human oversight. AI agents can
+make mistakes, misunderstand instructions, overwrite files, or change more than
+intended, so I need to stay aware of what an agent is doing. Clear prompts,
+limits on which files it can modify, diff reviews, tests, and a human in the
+loop all matter. I want to revisit this code later so I understand every part
+more deeply. After that, I would expand the dataset, add real listening
+behavior and collaborative filtering, and let the system learn from user
+feedback.
